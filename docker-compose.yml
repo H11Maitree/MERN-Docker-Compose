@@ -1,0 +1,49 @@
+version: '0.1'
+
+services:
+  react-app:
+    build: ./react
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    x-develop:
+      watch:
+        - action: rebuild
+          path: ./react
+          target: ./app
+          ignore:
+            - node_modules/
+  express-server:
+    build: ./express
+    environment:
+      - MONGO_URL=mongodb://mongo:27017
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    x-develop:
+      watch:
+        - action: rebuild
+          path: ./express
+          target: ./app
+          ignore:
+            - node_modules/
+  nginx:
+    build: ./proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - react-app
+      - express-server
+    restart: unless-stopped
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - '27017:27017'
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
